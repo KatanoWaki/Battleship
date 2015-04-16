@@ -54,12 +54,7 @@ def ask_ships():
                 sys.exit(0)
             # The help screen
             elif get_input[:1] == "h" or get_input[:1] == "H":
-                print("\nHelp:")
-                print("Game Objects: ~ water, X miss, M ship")
-                print("At the setup prompts the default values are in parenthesis. Just hit enter to select those.")
-                print("You can quit at anytime by typing Q or QUIT (case-insensitve).")
-                print("For testing, you can automate 10000 rounds of play by typing t3st at the prompt.")
-                print("Also, you can print a cheat map showing the locations of ships by typing d3bug at the prompt.")
+                print_help()
             else:
                 print("\nPlease enter a number.")
 
@@ -150,6 +145,16 @@ def place_ships():
             ship_coord.append([ship_row, ship_col])
 
 
+def print_help():
+    clear_screen()
+    print("\nHelp:")
+    print("\nGame Objects: ~ water, X miss, M ship")
+    print("\nAt the setup prompts, the default values are in parenthesis. Press enter to select defaults.")
+    print("You can quit at anytime by typing Q or QUIT (case-insensitve).")
+    print("For testing, you can automate thousands rounds of play by typing \"t3st\" at the prompt.")
+    print("Also, you can print a cheat map with ship locations by typing \"d3bug\" at the prompt.")
+
+
 # Clear Screen
 def clear_screen():
     if test_mode:  # DEBUG
@@ -166,11 +171,12 @@ def print_board(msg=""):
     clear_screen()
     for row in board:
         print(" ".join(row))
-    print()
-    print(msg, "\n")  # There seems to be a bug when putting these on the same line, we get a leading space.
+    print()  # There seems to be a bug when putting these
+    print(msg, "\n")  # on the same line, we get a leading space.
 
 
-# DEBUG Prints the ship locations  ///////////////////////////////////////////////////////////////////////////////////
+# DEBUG Methods ///////////////////////////////////////////////////////////////////////////////////////////////////
+# DEBUG Prints the ship locations
 def print_cheat_board():
     cheat_board = []
     for j in range(board_size):
