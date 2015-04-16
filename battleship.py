@@ -22,23 +22,23 @@ debug_mode_enabled = False  # Flag for enabling the debug mode that shows ship l
 wins_counter = 0  # Number of wins recorded for testing
 losses_counter = 0  # Number of losses recorded for testing
 winning_turns = []  # An array of the last turn counter in a winning game for testing
-test_num_games = 3000 # Default number of games to play during testing
+test_num_games = 3000  # Default number of games to play during testing
+
 
 # Reset board variables after every game
 def reset_board():
-    global board, ship_coord, debug_board, num_ships, num_turns
+    global board, ship_coord, debug_board
     board = []
     ship_coord = []
     debug_board = []
 
+
 # Reset everything else, called after testing complete
 def reset_test_vars():
-    global wins_counter, losses_counter, winning_turns, test_num_ships, test_num_turns, test_num_games
+    global wins_counter, losses_counter, winning_turns, num_ships, num_turns, test_num_games
     wins_counter = 0
     losses_counter = 0
     winning_turns = []
-    test_num_ships = 4
-    test_num_turns = 20
     test_num_games = 3000
     num_ships = 0
     num_turns = 0
@@ -61,7 +61,7 @@ def toggle_test_mode(on_off):
 
 # Ask the user for the number of ships and turns
 def ask_game_options():
-    global num_ships, num_turns, board_size
+    global num_ships, num_turns
 
     if test_mode_enabled:  # DEBUG suppresses asking while in test mode, we already have our variables set
         return
@@ -206,7 +206,7 @@ def ui_input(user_in, ui_type="", turns_left=0):
 
 # Sets the ships randomly and save them to an array
 def make_board():
-    global ship_coord, board_size, debug_board
+    global ship_coord, board_size, debug_board, board
 
     # The board size is 5 times the number of ships
     board_size = num_ships * 5
@@ -278,15 +278,15 @@ def print_board(turns_left, msg=" "):
 
     # Print the debug board if in debug mode
     if debug_mode_enabled:
-        pboard = debug_board
+        display_board = debug_board
         # Print the ship locations as coordinates also.
         print("Ship Locations:", ship_coord, "\n")
     else:
         # Otherwise print the normal board
-        pboard = board
+        display_board = board
 
     # Print the selected board with a message at the bottom
-    for row in pboard:
+    for row in display_board:
         print(" ".join(row))
     print("\n" + msg + "\n")
 
@@ -347,7 +347,7 @@ def quit_game():
 
 # Plays one full game of Battleship
 def play_one_game():
-    global board, num_ships, debug_board
+    global board, debug_board
 
     # Setup the game by asking the user some questions and printing the blank board
     clear_screen()
