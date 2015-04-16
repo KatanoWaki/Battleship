@@ -24,7 +24,7 @@ losses_counter = 0  # Number of losses recorded for testing
 winning_turns = []  # An array of the last turn counter in a winning game for testing
 test_num_ships = 4  # Default number of ships for testing
 test_num_turns = 41  # Default number of turns for testing
-test_num_rounds = 300  # Default number of games to play for testing
+test_num_games = 300  # Default number of games to play for testing
 
 
 # Reset all variables after every game
@@ -71,7 +71,7 @@ def ask_game_options():
     is_input_valid = False
     while not is_input_valid:
         try:
-            get_input = input("\nHow many ships do you want to play with? (4)") or 4
+            get_input = input("\nHow many ships do you want to play with? 1-7(4) ") or 4
             num_ships = int(get_input)
             # Our valid inputs are between 1 and 7 ships
             if 1 <= num_ships <= 7:
@@ -81,7 +81,7 @@ def ask_game_options():
         except ValueError:
             # The user can enable the automated test mode
             if get_input == "t3st":
-                set_test_params()
+                ask_test_options()
                 toggle_test_mode(True)
                 return
             # The user can toggle debug mode
@@ -106,7 +106,7 @@ def ask_game_options():
     while not is_input_valid:
         try:
             get_input = input(
-                "\nHow many turns do you want? (%d) is medium." % default_turns) or default_turns
+                "\nHow many turns do you want? (%d) is medium. " % default_turns) or default_turns
             num_turns = int(get_input)
             # Valid number of turns is between 1 and the upper limit, which is based on the number of ships
             if 1 <= num_turns <= turns_limit:
@@ -116,7 +116,7 @@ def ask_game_options():
         except ValueError:
             # The user can toggle testing mid-game
             if get_input == "t3st":
-                set_test_params()
+                ask_test_options()
                 toggle_test_mode(True)
                 return
             # The user can toggle debug mode mid-game
@@ -132,13 +132,13 @@ def ask_game_options():
 
 
 # This prompts the user for the parameters to begin testing with.
-def set_test_params():
-    global test_num_ships, test_num_turns, test_num_rounds, num_ships, num_turns
+def ask_test_options():
+    global test_num_ships, test_num_turns, test_num_games, num_ships, num_turns
 
     is_input_valid = False
     while not is_input_valid:
         try:
-            get_input = input("\nHow many ships for testing? (4)") or 4
+            get_input = input("\nHow many ships for testing? 1-7(4) ") or 4
             test_num_ships = int(get_input)
             if 1 <= test_num_ships <= 7:
                 is_input_valid = True
@@ -147,6 +147,8 @@ def set_test_params():
         except ValueError:
             if get_input[:1] == "q" or get_input[:1] == "Q":
                 quit_game()
+            elif get_input[:1] == "h" or get_input[:1] == "H":
+                print_help()
             else:
                 print("\nPlease enter a number.")
 
@@ -165,6 +167,8 @@ def set_test_params():
         except ValueError:
             if get_input[:1] == "q" or get_input[:1] == "Q":
                 quit_game()
+            elif get_input[:1] == "h" or get_input[:1] == "H":
+                print_help()
             else:
                 print("\nPlease enter a number.")
 
@@ -172,13 +176,15 @@ def set_test_params():
     while not is_input_valid:
         try:
             get_input = input(
-                "\nHow many rounds to play the game? (300)") or 300
-            test_num_rounds = int(get_input)
-            if 1 <= test_num_rounds:
+                "\nHow many rounds to play the game? (300) ") or 300
+            test_num_games = int(get_input)
+            if 1 <= test_num_games:
                 is_input_valid = True
         except ValueError:
             if get_input[:1] == "q" or get_input[:1] == "Q":
                 quit_game()
+            elif get_input[:1] == "h" or get_input[:1] == "H":
+                print_help()
             else:
                 print("\nPlease enter a number.")
     print()
@@ -199,88 +205,84 @@ def make_board():
         ship_row = SystemRandom.randint(random, 1, board_size)
         ship_col = SystemRandom.randint(random, 1, board_size)
 
-        # For every new ship, roll to see if it is longer than one coordinate, this determines ship length
-        ship_length = SystemRandom.randint(random, 1, 5)
+        # For every new ship, roll to see how long it is
+        ship_length = SystemRandom.randint(random, 2, 6)
 
-        # If it is longer than one, then we roll to see what direction it will grow ( 1 through 4 )
-        if ship_length:
-            ship_orientation = SystemRandom.randint(random, 1, 4)
+        # For every new ship, roll to see which direction it is facing
+        ship_orientation = SystemRandom.randint(random, 1, 4)
 
-            # These are ships that can be 2-5 coordinates long and stem in one of the four directions.
-            # We also don't worry if they leave the board, it just makes a shorter ship.
-            # We save each coordinate of the ship into the ship_coord array
+        # These are ships that can be 2-6 coordinates long and stem in one of the four directions.
+        # We also don't worry if they leave the board, it just makes a shorter ship.
+        # We save each coordinate of the ship into the ship_coord array
+        # When we check for a win, we test to see if the shot was on the board before
+        # checking against the ship_coord array.
 
-            # Ship grows right
-            if ship_orientation == 1:
-                ship_coord.append([ship_row, ship_col])
-                for i in range(1, ship_length):
-                    ship_row += 1
-                    ship_coord.append([ship_row, ship_col])
-
-            # Ship grows down
-            elif ship_orientation == 2:
-                ship_coord.append([ship_row, ship_col])
-                for i in range(1, ship_length):
-                    ship_col += 1
-                    ship_coord.append([ship_row, ship_col])
-
-            # Ship grows left
-            elif ship_orientation == 3:
-                ship_coord.append([ship_row, ship_col])
-                for i in range(1, ship_length):
-                    ship_row -= 1
-                    ship_coord.append([ship_row, ship_col])
-
-            # Ship grows up
-            elif ship_orientation == 4:
-                ship_coord.append([ship_row, ship_col])
-                for i in range(1, ship_length):
-                    ship_col -= 1
-                    ship_coord.append([ship_row, ship_col])
-
-        # This is a single coordinate ship
-        else:
+        # Ship grows right
+        if ship_orientation == 1:
             ship_coord.append([ship_row, ship_col])
+            for i in range(1, ship_length):
+                ship_row += 1
+                ship_coord.append([ship_row, ship_col])
+
+        # Ship grows down
+        elif ship_orientation == 2:
+            ship_coord.append([ship_row, ship_col])
+            for i in range(1, ship_length):
+                ship_col += 1
+                ship_coord.append([ship_row, ship_col])
+
+        # Ship grows left
+        elif ship_orientation == 3:
+            ship_coord.append([ship_row, ship_col])
+            for i in range(1, ship_length):
+                ship_row -= 1
+                ship_coord.append([ship_row, ship_col])
+
+        # Ship grows up
+        elif ship_orientation == 4:
+            ship_coord.append([ship_row, ship_col])
+            for i in range(1, ship_length):
+                ship_col -= 1
+                ship_coord.append([ship_row, ship_col])
 
     # Build an array of empty ocean waves to represent the game board
     for y in range(board_size):
         board.append(["~"] * board_size)
-    # Build and empty debugging board
-    for j in range(board_size):
         debug_board.append(["~"] * board_size)
 
     # Add all the ships to the debug_board
     for k in ship_coord:
-        debug_row = k[0]
-        debug_col = k[1]
-        if 1 <= debug_row <= board_size and 1 <= debug_col <= board_size:
-            debug_board[debug_row - 1][debug_col - 1] = "M"
+        if 1 <= k[0] <= board_size and 1 <= k[1] <= board_size:
+            debug_board[k[0] - 1][k[1] - 1] = "M"
 
 
 # Show board to user
 # @param msg sets a message to display below the board
-def print_board(msg=""):
+def print_board(turns_left, msg=" "):
     if test_mode_enabled:  # DEBUG suppresses console output in test mode
         return
 
-    # Print the debugging board only when we are in debugging mode
-    if debug_mode_enabled:
-        clear_screen()
-        print("Ship Locations: ", ship_coord, "\n")
-        for row in debug_board:
-            print(" ".join(row))
-        print()
-        # There seems to be a bug when putting these on the same line, we get a leading space.
-        print(msg, "\n")
+    # Assume the normal board will be printed
+    pboard = board
+    clear_screen()
 
-    # Print the normal game board
+    # Swap to the debugging board only when we are in debugging mode
+    if debug_mode_enabled:
+        pboard = debug_board
+        # Print the ship locations as coordinates also.
+        print("Ship Locations:", ship_coord, "\n")
+
+    # Print the selected board with a message at the bottom
+    for row in pboard:
+        print(" ".join(row))
+    print("\n" + msg + "\n")
+
+    if turns_left == 0:
+        print(get_stats())
+    elif turns_left == 1:
+        print("Turn ", num_turns - turns_left + 1, ", last turn!")
     else:
-        clear_screen()
-        for row in board:
-            print(" ".join(row))
-        print()
-        # There seems to be a bug when putting these on the same line, we get a leading space.
-        print(msg, "\n")
+        print("Turn ", num_turns - turns_left + 1, " / ", num_turns)
 
 
 # Print the Help Screen
@@ -301,23 +303,24 @@ def clear_screen():
         return
     for i in range(100):
         print("\n")
+    # This message is at the top of the game most of the time.
     print("Let's play Battleship!\n")
 
 
 # Print statistics after the game.
-def print_stats():
-    if test_mode_enabled:  # DEBUG suppresses console output in test mode
+def get_stats():
+    if test_mode_enabled:  # DEBUG this does not need to run in test mode
         return
-    print("Wins: ", wins_counter, "Losses: ", losses_counter)
 
     # This finds the average number of turns it took to win the game.
     avg = 0
+    average_string = " "
     for w in winning_turns:
         avg += w
     if len(winning_turns) > 0:  # Suppress if there weren't any wins, prevents !DIV/0
         avg //= len(winning_turns)
-        print("Average Winning Turn: ", avg)
-    print()
+        average_string = ", Average Winning Turn: " + str(avg)
+    return "Wins: " + str(wins_counter) + ", Losses: " + str(losses_counter) + average_string + "\n"
 
 
 # Quit the game with a goodbye message
@@ -327,44 +330,41 @@ def quit_game():
 
 
 # Plays one full game of Battleship
-def play_one_round():
+def play_one_game():
     global board, num_ships, debug_board
 
     # Setup the game by asking the user some questions and printing the blank board
     clear_screen()
     ask_game_options()
     make_board()
-    print_board()
     # Start with the total number of turns that the user chose
     turns_left = num_turns
-
+    print_board(turns_left)
     # Playing the game as long we have turns (shots) left.
+    # Each loop plays one turn
     while turns_left > 0:
-        if not test_mode_enabled:  # DEBUG suppresses console output in test mode
-            if turns_left == 1:
-                print("Turn ", num_turns - turns_left + 1, ", last turn!")
-            else:
-                print("Turn ", num_turns - turns_left + 1, " / ", num_turns)
 
-        if test_mode_enabled:  # DEBUG fake user input in testing mode.
+        if test_mode_enabled:  # DEBUG fake user input in testing mode and skip to the win-checking
             guess_row = SystemRandom.randint(random, 1, board_size)
             guess_col = SystemRandom.randint(random, 1, board_size)
 
-        else:  # The user is playing the game
+        else:
+            # The user is playing the game
             # Get user's guess coordinates
             is_input_valid = False
             while not is_input_valid:
                 try:
-                    row_input = ""
-                    col_input = ""
+                    get_input = ""
+                    get_input = input("\nGuess Row: ")
 
-                    row_input = input("\nGuess Row: ")
                     # Make sure the user's guess is an integer
-                    guess_row = int(row_input)
+                    guess_row = int(get_input)
 
-                    col_input = input("Guess Col: ")
+                    get_input = ""
+                    get_input = input("Guess Col: ")
+
                     # Make sure the user's guess is an integer
-                    guess_col = int(col_input)
+                    guess_col = int(get_input)
 
                     # User's guess is two integers, we can continue
                     is_input_valid = True
@@ -372,12 +372,17 @@ def play_one_round():
                 # The user's input was not an integer, they may be trying to tell us something else
                 except ValueError:
                     # The user can quit mid-game, by typing Q or Quit, case-insensitive
-                    if row_input[:1] == "q" or row_input[:1] == "Q" or col_input[:1] == "q" or col_input[:1] == "Q":
+                    if get_input[:1] == "q" or get_input[:1] == "Q":
                         quit_game()
+                    elif get_input[:1] == "h" or get_input[:1] == "H":
+                        print_help()
+                        print("\nE to exit Help.")
+                    elif get_input[:1] == "e" or get_input[:1] == "E":
+                        print_board(turns_left)
                     # The user can toggle debug mode for the next turn.
-                    elif row_input == "d3bug":
+                    elif get_input == "d3bug":
                         toggle_debug_mode()
-                        print_board("Debug Mode enabled")
+                        print_board(turns_left, "Debug Mode enabled")
                     else:
                         print("\nPlease enter a number.")
 
@@ -387,31 +392,27 @@ def play_one_round():
         # Check to see if the shot is within the board limits
         if (1 <= guess_row <= board_size) and (1 <= guess_col <= board_size):
 
-            # Check the guess coordinates for a ship in the ship location array.
-            # We use the coord array for better performance
-            for x in ship_coord:
-                if x == [guess_row, guess_col]:
-                    # A match was found, the user scored a direct hit, draw damaged boat
-                    board[guess_row - 1][guess_col - 1] = "M"
-                    msg = "Congratulations! You sunk my battleship!\n"
-                    global winning_turns
-                    # Add a win to the stats, and record what turn it was
-                    winning_turns.append(num_turns - turns_left + 1)  # DEBUG
-                    print_board(msg)
-                    global wins_counter
-                    wins_counter += 1
-                    print_stats()
-                    reset_board()
-                    # Exit play_one_round and return to the main menu
-                    return True
+            # CHeck the user input against ship locations
+            if [guess_row, guess_col] in ship_coord:
+                # A match was found, the user scored a direct hit, draw damaged boat
+                board[guess_row - 1][guess_col - 1] = "M"
+                msg = "Congratulations! You sunk my battleship!"
 
-                # Check against previous misses by looking for X's on the board
-                elif board[guess_row - 1][guess_col - 1] == "X":
-                    msg = "You guessed that one already."
-                    # Send them back to guess again
-                    break
+                # Add a win to the stats, and record what turn it was
+                global winning_turns, wins_counter
+                winning_turns.append(num_turns - turns_left + 1)
+                wins_counter += 1
+                print_board(0, msg)
+                reset_board()
+                # Exit play_one_game and return to the main menu
+                return True
 
-                # The shot missed and wasn't previously guessed
+            # Check against previous misses by looking for X's on the board
+            elif board[guess_row - 1][guess_col - 1] == "X":
+                msg = "You guessed that one already."
+
+            # The shot missed and wasn't previously guessed
+            else:
                 msg = "You missed my battleship!"
 
             # Add an X to the board at the guess location to keep track of previous guesses
@@ -426,14 +427,13 @@ def play_one_round():
         turns_left -= 1
 
         # Print the board and tell the user what happened with msg
-        print_board(msg)
+        print_board(turns_left, msg)
 
     # The user ran ouf of turns. Add a loss to stats and return to the main menu
     else:
-        print_board("Game Over")
         global losses_counter
         losses_counter += 1
-        print_stats()
+        print_board(0, "Game Over")
         reset_board()
         return False
 
@@ -444,17 +444,17 @@ def main():
         # Automated testing mode is enabled
         # Play the game several times in a row automatically for testing
         if test_mode_enabled:
-            for w in range(test_num_rounds):
-                play_one_round()
+            for w in range(test_num_games):
+                play_one_game()
             toggle_test_mode(False)
-            print_stats()
+            print(get_stats())
             reset_test_vars()
 
         # User is playing the game
         else:
-            play_one_round()
+            play_one_game()
 
-        # After each round of play or batch of testing, ask the user if they would like to play again or quit.
+        # After each game or batch of testing, ask the user if they would like to play again or quit.
         if not test_mode_enabled:
             play_again = input("Play again? (Q to Quit or any key to Continue)") or "Y"
             if play_again[:1] == "q" or play_again[:1] == "Q":
