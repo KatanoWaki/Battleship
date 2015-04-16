@@ -22,25 +22,26 @@ debug_mode_enabled = False  # Flag for enabling the debug mode that shows ship l
 wins_counter = 0  # Number of wins recorded for testing
 losses_counter = 0  # Number of losses recorded for testing
 winning_turns = []  # An array of the last turn counter in a winning game for testing
-test_num_ships = 4  # Default number of ships for testing
-test_num_turns = 41  # Default number of turns for testing
-test_num_games = 300  # Default number of games to play for testing
+test_num_games = 3000 # Default number of games to play during testing
 
-
-# Reset all variables after every game
+# Reset board variables after every game
 def reset_board():
-    global board, ship_coord, debug_board
+    global board, ship_coord, debug_board, num_ships, num_turns
     board = []
     ship_coord = []
     debug_board = []
 
-
-# Reset everything, called after testing complete
+# Reset everything else, called after testing complete
 def reset_test_vars():
-    global wins_counter, losses_counter, winning_turns
+    global wins_counter, losses_counter, winning_turns, test_num_ships, test_num_turns, test_num_games
     wins_counter = 0
     losses_counter = 0
     winning_turns = []
+    test_num_ships = 4
+    test_num_turns = 20
+    test_num_games = 3000
+    num_ships = 0
+    num_turns = 0
 
 
 # Toggles debug mode on and off, this is called from the prompt with "d3bug"
@@ -83,18 +84,20 @@ def ask_game_options():
             if ui_input(get_input, "game_options"):
                 return
 
-    # The default number of turns is equal to one-tenth the area of the board ( medium )
-    default_turns = int(((num_ships * 5) ** 2) / 10) + 1
-    # The max number of turns is equal to half area of the board ( easy ). Board size is 5 times the number of ships
-    turns_limit = int(((num_ships * 5) ** 2) / 2) + 1
+    # The default number of turns
+    default_turns = num_ships * 6
+
+    # The max number of turns
+    turns_limit = num_ships * 12
 
     # Ask the user how many turns they want, this sets difficulty, the default is medium
     is_input_valid = False
     while not is_input_valid:
         try:
             get_input = input(
-                "\nHow many turns do you want? (%d) is medium. " % default_turns) or default_turns
+                "\nHow many shots/turns do you want? (%d) is medium. " % default_turns) or default_turns
             num_turns = int(get_input)
+
             # Valid number of turns is between 1 and the upper limit, which is based on the number of ships
             if 1 <= num_turns <= turns_limit:
                 is_input_valid = True
@@ -105,51 +108,58 @@ def ask_game_options():
                 return
 
 
-# This prompts the user for the parameters to begin testing with.
+# This prompts the user for the number of ships to begin testing with.
 def ask_test_options():
-    global test_num_ships, test_num_turns, test_num_games, num_ships, num_turns
+    global num_ships, num_turns, test_num_games
+
+    print("\nTest Mode Enabled, press \"Q\" to quit")
 
     is_input_valid = False
     get_input = ""
     while not is_input_valid:
         try:
             get_input = input("\nHow many ships for testing? 1-7(4) ") or 4
-            test_num_ships = int(get_input)
-            if 1 <= test_num_ships <= 7:
+            num_ships = int(get_input)
+            if 1 <= num_ships <= 7:
                 is_input_valid = True
             else:
                 print("\nPlease enter a number between 1 and 7.")
         except ValueError:
             ui_input(get_input)
 
-    test_def_turns = int(((test_num_ships * 5) ** 2) / 10) + 1
+    # The default number of turns
+    default_turns = num_ships * 6
+
+    # The max number of turns
+    turns_limit = num_ships * 12
+
+    # This prompts the user for the number of shots they want to test with
     is_input_valid = False
     while not is_input_valid:
         try:
             get_input = input(
-                "\nHow many shots do you want? (%d) is medium." % test_def_turns) or test_def_turns
-            test_num_turns = int(get_input)
-            test_turns_limit = int(((test_num_ships * 5) ** 2) / 2) + 1
-            if 1 <= test_num_turns <= test_turns_limit:
+                "\nHow many shots/turns do you want for testing? (%d) is medium." % default_turns) or default_turns
+            num_turns = int(get_input)
+            if 1 <= num_turns <= turns_limit:
                 is_input_valid = True
             else:
-                print("\nPlease enter a number between 1 and %d." % test_turns_limit)
+                print("\nPlease enter a number between 1 and %d." % turns_limit)
         except ValueError:
             ui_input(get_input)
 
+    # This prompts the user for how many full games they would like the testing to cycle through
     is_input_valid = False
     while not is_input_valid:
         try:
             get_input = input(
-                "\nHow many rounds to play the game? (300) ") or 300
-            test_num_games = int(get_input)
-            if 1 <= test_num_games:
+                "\nHow many rounds to play the game? (%d) " % test_num_games) or test_num_games
+            num_games = int(get_input)
+            if 1 <= num_games:
                 is_input_valid = True
         except ValueError:
             ui_input(get_input)
+
     print()
-    num_turns = test_num_turns
-    num_ships = test_num_ships
 
 
 # Check user input for options
@@ -438,8 +448,10 @@ def main():
         if test_mode_enabled:
             for w in range(test_num_games):
                 play_one_game()
+            # Toggle test most off first to print stats
             toggle_test_mode(False)
             print(get_stats())
+            # Reset everything back to defaults
             reset_test_vars()
 
         # User is playing the game
