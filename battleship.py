@@ -296,7 +296,7 @@ def print_help():
     clear_screen()
     print("\nHelp:")
     print("\nGame Objects: ~ water; X miss; M ship")
-    print("\nWhen you see a value in parenthesis (4), just press ENTER to select defaults.")
+    print("\nWhen you see a value in parenthesis (4), just press ENTER to select defaults.\n")
     print("\"Q\" or \"QUIT\" (not case-sensitive). - Quits at any prompt")
     print("\"H\" or \"HELP\" (not case-sensitive) - Prints this help screen.")
     print("\n\"t3st\" at the game setup prompt - Setup and run thousands of automated rounds of game play.")
@@ -331,7 +331,7 @@ def get_stats():
 
 # Quit the game with a goodbye message
 def quit_game():
-    print("\nHave a nice day!")
+    print("\nHave a nice day!\n\n")
     sys.exit(0)
 
 
