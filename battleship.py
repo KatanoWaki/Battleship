@@ -22,19 +22,18 @@ test_num_rounds = 300  # Default number of games to play for testing
 
 
 # Reset all variables after every game
-# @param is_testing is False by default, if True will reset more global variables
-def reset_vars(is_testing=False):
-    global board, ship_coord, wins, losses, winning_turns, test_mode
-
+def reset_board():
+    global board, ship_coord
     board = []
     ship_coord = []
 
-    # Also reset win records if T is passed for test mode
-    if is_testing:
-        wins = 0
-        losses = 0
-        winning_turns = []
-        test_mode = False
+
+# Reset everything, called after testing complete
+def reset_test_vars():
+    global wins, losses, winning_turns
+    wins = 0
+    losses = 0
+    winning_turns = []
 
 
 # Ask the user for the number of ships and turns
@@ -112,7 +111,7 @@ def ask_game_options():
                 print("\nPlease enter a number.")
 
 
-# Sets the ships randomly on the board, but only save them to an array
+# Sets the ships randomly and save them to an array
 def make_board():
     global ship_coord, board_size
 
@@ -209,8 +208,11 @@ def print_board(msg=""):
 
 # Print statistics after the game.
 def print_stats():
+    if test_mode:  # DEBUG suppresses console output in test mode
+        return
     print("Wins: ", wins, "Losses: ", losses)
 
+    # This finds the average number of turns it took to win the game.
     avg = 0
     for w in winning_turns:
         avg += w
@@ -301,6 +303,8 @@ def play_one_round():
                     print_board(msg)
                     global wins
                     wins += 1
+                    print_stats()
+                    reset_board()
                     # Exit play_one_round and return to the main menu
                     return True
 
@@ -331,28 +335,27 @@ def play_one_round():
         print_board("Game Over")
         global losses
         losses += 1
+        print_stats()
+        reset_board()
         return False
 
 
+# Entry point, this loops the game until user exits.
 def main():
-    # Entry point, this loops the game until user exits.
     while True:
         # Automated testing mode is enabled
+        # Play the game several times in a row automatically for testing
         if test_mode:
-            test_play()
+            for w in range(test_num_rounds):
+                play_one_round()
+            global test_mode
+            test_mode = False
             print_stats()
-            reset_vars(True)
+            reset_test_vars()
 
         # User is playing the game
         else:
             play_one_round()
-            reset_vars(False)
-
-            # This prevents the stats from printing when we begin test mode,
-            # Because when testing mode is enabled, the round ends prematurely and finishes this if statement.
-            # It will then loop from the while True to the testing mode branch of this if statement.
-            if not test_mode:
-                print_stats()
 
         # After each round of play or batch of testing, ask the user if they would like to play again or quit.
         if not test_mode:
@@ -363,7 +366,7 @@ def main():
 
 # region DEBUG Functions ////////////////////////////////////////////////////////////////////////////////////////////
 
-# Toggles debug mode on and off from a prompt
+# Toggles debug mode on and off, this is called from the prompt with "d3bug"
 def set_debug_mode():
     global debug_mode
     debug_mode = not debug_mode
@@ -373,7 +376,7 @@ def set_debug_mode():
         print("\nDebug mode disabled.")
 
 
-# DEBUG Prints the ship locations
+# Prints the ship locations second map in debug mode
 def print_debug_board():
     debug_board = []
     for j in range(board_size):
@@ -389,7 +392,7 @@ def print_debug_board():
     print()
 
 
-# DEBUG This shows where the ships are for testing
+# Prints the ship locations as coordinates in debug mode
 def print_debug_info():
     print("\nDEBUG INFO: ")
     for x in ship_coord:
@@ -400,15 +403,7 @@ def print_debug_info():
     print("/Cheat Board -----------------")
 
 
-# DEBUG Play the game 300 times automatically for testing
-def test_play():
-    global board, ship_coord
-    for w in range(test_num_rounds):
-        reset_vars(False)
-        play_one_round()
-
-
-# DEBUG This prompts the user for the parameters to test with.
+# This prompts the user for the parameters to begin testing with.
 def set_test_params():
     global test_num_ships, test_num_turns, test_num_rounds, num_ships, num_turns
 
