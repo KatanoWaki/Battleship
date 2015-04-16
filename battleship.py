@@ -53,9 +53,9 @@ def toggle_debug_mode():
         print("\nDebug mode disabled.")
 
 
-def toggle_test_mode(on):
+def toggle_test_mode(on_off):
     global test_mode_enabled
-    test_mode_enabled = on
+    test_mode_enabled = on_off
 
 
 # Ask the user for the number of ships and turns
@@ -69,6 +69,7 @@ def ask_game_options():
 
     # Ask the user for the number of ships, more ships make a bigger board and generally longer game.
     is_input_valid = False
+    get_input = ""
     while not is_input_valid:
         try:
             get_input = input("\nHow many ships do you want to play with? 1-7(4) ") or 4
@@ -79,22 +80,8 @@ def ask_game_options():
             else:
                 print("\nPlease enter a number between 1 and 7.")
         except ValueError:
-            # The user can enable the automated test mode
-            if get_input == "t3st":
-                ask_test_options()
-                toggle_test_mode(True)
+            if ui_input(get_input, "game_options"):
                 return
-            # The user can toggle debug mode
-            elif get_input == "d3bug":
-                toggle_debug_mode()
-            # The user can quit by typing Q or Quit, case-insensitive
-            elif get_input[:1] == "q" or get_input[:1] == "Q":
-                quit_game()
-            # The help screen
-            elif get_input[:1] == "h" or get_input[:1] == "H":
-                print_help()
-            else:
-                print("\nPlease enter a number.")
 
     # The default number of turns is equal to one-tenth the area of the board ( medium )
     default_turns = int(((num_ships * 5) ** 2) / 10) + 1
@@ -114,21 +101,8 @@ def ask_game_options():
             else:
                 print("\nPlease enter a number between 1 and %d." % turns_limit)
         except ValueError:
-            # The user can toggle testing mid-game
-            if get_input == "t3st":
-                ask_test_options()
-                toggle_test_mode(True)
+            if ui_input(get_input, "game_options"):
                 return
-            # The user can toggle debug mode mid-game
-            elif get_input == "d3bug":
-                toggle_debug_mode()
-            # The user can quit or get help at this prompt also
-            elif get_input[:1] == "q" or get_input[:1] == "Q":
-                quit_game()
-            elif get_input[:1] == "h" or get_input[:1] == "H":
-                print_help()
-            else:
-                print("\nPlease enter a number.")
 
 
 # This prompts the user for the parameters to begin testing with.
@@ -136,6 +110,7 @@ def ask_test_options():
     global test_num_ships, test_num_turns, test_num_games, num_ships, num_turns
 
     is_input_valid = False
+    get_input = ""
     while not is_input_valid:
         try:
             get_input = input("\nHow many ships for testing? 1-7(4) ") or 4
@@ -145,12 +120,7 @@ def ask_test_options():
             else:
                 print("\nPlease enter a number between 1 and 7.")
         except ValueError:
-            if get_input[:1] == "q" or get_input[:1] == "Q":
-                quit_game()
-            elif get_input[:1] == "h" or get_input[:1] == "H":
-                print_help()
-            else:
-                print("\nPlease enter a number.")
+            ui_input(get_input)
 
     test_def_turns = int(((test_num_ships * 5) ** 2) / 10) + 1
     is_input_valid = False
@@ -165,12 +135,7 @@ def ask_test_options():
             else:
                 print("\nPlease enter a number between 1 and %d." % test_turns_limit)
         except ValueError:
-            if get_input[:1] == "q" or get_input[:1] == "Q":
-                quit_game()
-            elif get_input[:1] == "h" or get_input[:1] == "H":
-                print_help()
-            else:
-                print("\nPlease enter a number.")
+            ui_input(get_input)
 
     is_input_valid = False
     while not is_input_valid:
@@ -181,15 +146,52 @@ def ask_test_options():
             if 1 <= test_num_games:
                 is_input_valid = True
         except ValueError:
-            if get_input[:1] == "q" or get_input[:1] == "Q":
-                quit_game()
-            elif get_input[:1] == "h" or get_input[:1] == "H":
-                print_help()
-            else:
-                print("\nPlease enter a number.")
+            ui_input(get_input)
     print()
     num_turns = test_num_turns
     num_ships = test_num_ships
+
+
+# Check user input for options
+def ui_input(user_in, ui_type="", turns_left=0):
+    # If the user is in the normal options menu, we can select these options
+    if ui_type == "game_options":
+        if user_in == "t3st":
+            ask_test_options()
+            toggle_test_mode(True)
+            # If this returns true we will break out of the main game and start testing
+            return True
+        elif user_in == "d3bug":
+            toggle_debug_mode()
+            return False
+
+    # If the user is in the middle of a game, we can select these options
+    elif ui_type == "in_game":
+        if user_in[:1] == "e" or user_in[:1] == "E":
+            print_board(turns_left)
+            return False
+        # The user can toggle debug mode for the next turn.
+        elif user_in == "d3bug":
+            toggle_debug_mode()
+            if debug_mode_enabled:
+                msg = "Debug Mode enabled"
+            else:
+                msg = "Debug Mode disabled"
+            print_board(turns_left, msg)
+            return False
+
+    # All UI types have these options
+    if user_in[:1] == "q" or user_in[:1] == "Q":
+        quit_game()
+    elif user_in[:1] == "h" or user_in[:1] == "H":
+        print_help()
+        if ui_type == "in_game":
+            print("\nE to exit Help.")
+    else:
+        print("\nPlease enter a number.")
+
+    # If this function returns false, we can just continue.
+    return False
 
 
 # Sets the ships randomly and save them to an array
@@ -262,25 +264,29 @@ def print_board(turns_left, msg=" "):
     if test_mode_enabled:  # DEBUG suppresses console output in test mode
         return
 
-    # Assume the normal board will be printed
-    pboard = board
     clear_screen()
 
-    # Swap to the debugging board only when we are in debugging mode
+    # Print the debug board if in debug mode
     if debug_mode_enabled:
         pboard = debug_board
         # Print the ship locations as coordinates also.
         print("Ship Locations:", ship_coord, "\n")
+    else:
+        # Otherwise print the normal board
+        pboard = board
 
     # Print the selected board with a message at the bottom
     for row in pboard:
         print(" ".join(row))
     print("\n" + msg + "\n")
 
+    # If a zero is passed or we are out of turns, print the stats
     if turns_left == 0:
         print(get_stats())
+    # Special statement for last turn
     elif turns_left == 1:
         print("Turn ", num_turns - turns_left + 1, ", last turn!")
+    # Print the number of turns
     else:
         print("Turn ", num_turns - turns_left + 1, " / ", num_turns)
 
@@ -290,11 +296,11 @@ def print_help():
     clear_screen()
     print("\nHelp:")
     print("\nGame Objects: ~ water; X miss; M ship")
-    print("\nFor a quick game, the default values are in parenthesis. Just press enter to select defaults.")
-    print("You can quit at anytime by typing Q or QUIT (not case-sensitive).")
-    print("You can get to this help screen by typing H or HELP (not case-sensitive).")
-    print("\nFor testing, you can automate thousands rounds of play by typing \"t3st\" at the prompt.")
-    print("Also, you can print a map with ship locations by typing \"d3bug\" at the prompt.")
+    print("\nWhen you see a value in parenthesis (4), just press ENTER to select defaults.")
+    print("\"Q\" or \"QUIT\" (not case-sensitive). - Quits at any prompt")
+    print("\"H\" or \"HELP\" (not case-sensitive) - Prints this help screen.")
+    print("\n\"t3st\" at the game setup prompt - Setup and run thousands of automated rounds of game play.")
+    print("\"d3bug\" at the setup or in-game prompt - Toggles Debug mode, shows the ship locations on the board.")
 
 
 # Clear the screen and print the title
@@ -352,15 +358,14 @@ def play_one_game():
             # The user is playing the game
             # Get user's guess coordinates
             is_input_valid = False
+            get_input = ""
             while not is_input_valid:
                 try:
-                    get_input = ""
                     get_input = input("\nGuess Row: ")
 
                     # Make sure the user's guess is an integer
                     guess_row = int(get_input)
 
-                    get_input = ""
                     get_input = input("Guess Col: ")
 
                     # Make sure the user's guess is an integer
@@ -371,20 +376,7 @@ def play_one_game():
 
                 # The user's input was not an integer, they may be trying to tell us something else
                 except ValueError:
-                    # The user can quit mid-game, by typing Q or Quit, case-insensitive
-                    if get_input[:1] == "q" or get_input[:1] == "Q":
-                        quit_game()
-                    elif get_input[:1] == "h" or get_input[:1] == "H":
-                        print_help()
-                        print("\nE to exit Help.")
-                    elif get_input[:1] == "e" or get_input[:1] == "E":
-                        print_board(turns_left)
-                    # The user can toggle debug mode for the next turn.
-                    elif get_input == "d3bug":
-                        toggle_debug_mode()
-                        print_board(turns_left, "Debug Mode enabled")
-                    else:
-                        print("\nPlease enter a number.")
+                    ui_input(get_input, "in_game", turns_left)
 
         # msg gets passed to the print_board function to tell the user what happened during the round.
         msg = ""
@@ -459,6 +451,5 @@ def main():
             play_again = input("Play again? (Q to Quit or any key to Continue)") or "Y"
             if play_again[:1] == "q" or play_again[:1] == "Q":
                 quit_game()
-
 
 main()
