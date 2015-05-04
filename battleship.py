@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-__author__ = 'Jeff Schreiner'
+__author__ = 'Jeff Schreiner @ jeff.s.schreiner@gmail.com'
 
 """ This is a text based game of battleship.
     This version has difficulty and length options,
@@ -305,7 +305,7 @@ def print_board(turns_left, msg=" "):
 def print_help():
     clear_screen()
     print("\nHelp:")
-    print("\nGame Objects: ~ water; X miss; M ship")
+    print("\nGame Objects:\n   ~~ = Water\n    X = Miss\n    M = Ship")
     print("\nWhen you see a value in parenthesis (4), just press ENTER to select defaults.\n")
     print("\"Q\" or \"QUIT\" (not case-sensitive). - Quits at any prompt")
     print("\"H\" or \"HELP\" (not case-sensitive) - Prints this help screen.")
